@@ -123,7 +123,8 @@ def main():
        else:
             img = pred_disp
        img = (img*256).astype('uint16')
-       skimage.io.imsave('disparity.png',img)
+       cv2.imwrite('disparity.png', img)
+       #skimage.io.imsave('disparity.png',img)
        
        #img = np.concatenate((imgL_o, imgR_o),axis=1)
        #img = cv2.line(img, (0, 240), (1504, 240), (0, 0, 255), 2)

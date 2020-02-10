@@ -5,7 +5,7 @@ import torch.utils.data
 from torch.autograd import Variable
 import torch.nn.functional as F
 import math
-from submodule import *
+from .submodule import *
 
 class PSMNet(nn.Module):
     def __init__(self, maxdisp):
@@ -81,7 +81,7 @@ class PSMNet(nn.Module):
         cost0 = self.dres4(cost0) + cost0
 
         cost = self.classify(cost0)
-        cost = F.upsample(cost, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear')
+        cost = F.upsample(cost, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear', align_corners=True)
         cost = torch.squeeze(cost,1)
         pred = F.softmax(cost)
         pred = disparityregression(self.maxdisp)(pred)

@@ -5,7 +5,7 @@ import torch.utils.data
 from torch.autograd import Variable
 import torch.nn.functional as F
 import math
-from submodule import *
+from .submodule import *
 
 class hourglass(nn.Module):
     def __init__(self, inplanes):
@@ -107,9 +107,9 @@ class PSMNet(nn.Module):
 
 
         #matching
-        cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1]*2, self.maxdisp/4,  refimg_fea.size()[2],  refimg_fea.size()[3]).zero_()).cuda()
+        cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1]*2, self.maxdisp//4,  refimg_fea.size()[2],  refimg_fea.size()[3]).zero_()).cuda()
 
-        for i in range(self.maxdisp/4):
+        for i in range(self.maxdisp//4):
             if i > 0 :
              cost[:, :refimg_fea.size()[1], i, :,i:]   = refimg_fea[:,:,:,i:]
              cost[:, refimg_fea.size()[1]:, i, :,i:] = targetimg_fea[:,:,:,:-i]
@@ -135,18 +135,18 @@ class PSMNet(nn.Module):
         cost3 = self.classif3(out3) + cost2
 
         if self.training:
-		cost1 = F.upsample(cost1, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear')
-		cost2 = F.upsample(cost2, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear')
+            cost1 = F.upsample(cost1, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear', align_corners=True)
+            cost2 = F.upsample(cost2, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear', align_corners=True)
 
-		cost1 = torch.squeeze(cost1,1)
-		pred1 = F.softmax(cost1,dim=1)
-		pred1 = disparityregression(self.maxdisp)(pred1)
+            cost1 = torch.squeeze(cost1,1)
+            pred1 = F.softmax(cost1,dim=1)
+            pred1 = disparityregression(self.maxdisp)(pred1)
 
-		cost2 = torch.squeeze(cost2,1)
-		pred2 = F.softmax(cost2,dim=1)
-		pred2 = disparityregression(self.maxdisp)(pred2)
+            cost2 = torch.squeeze(cost2,1)
+            pred2 = F.softmax(cost2,dim=1)
+            pred2 = disparityregression(self.maxdisp)(pred2)
 
-        cost3 = F.upsample(cost3, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear')
+        cost3 = F.upsample(cost3, [self.maxdisp,left.size()[2],left.size()[3]], mode='trilinear',  align_corners=True)
         cost3 = torch.squeeze(cost3,1)
         pred3 = F.softmax(cost3,dim=1)
 	#For your information: This formulation 'softmax(c)' learned "similarity" 
