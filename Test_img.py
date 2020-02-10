@@ -87,14 +87,16 @@ def test(imgL,imgR):
         return pred_disp
 
 
-def main():
+def process_image(left_img: string, right_img: string, output_file: string):
+       start_time = time.time()
+
        processed = preprocess.get_transform(augment=False)
        if args.isgray:
-           imgL_o = cv2.cvtColor(cv2.imread(args.leftimg,0), cv2.COLOR_GRAY2RGB)
-           imgR_o = cv2.cvtColor(cv2.imread(args.rightimg,0), cv2.COLOR_GRAY2RGB)
+           imgL_o = cv2.cvtColor(cv2.imread(left_img,0), cv2.COLOR_GRAY2RGB)
+           imgR_o = cv2.cvtColor(cv2.imread(left_img,0), cv2.COLOR_GRAY2RGB)
        else:
-           imgL_o = (skimage.io.imread(args.leftimg).astype('float32'))
-           imgR_o = (skimage.io.imread(args.rightimg).astype('float32'))
+           imgL_o = (skimage.io.imread(args.leftimg))
+           imgR_o = (skimage.io.imread(args.rightimg))
        
        imgL = processed(imgL_o).numpy()
        imgR = processed(imgR_o).numpy()
@@ -106,7 +108,7 @@ def main():
             times = imgL.shape[2]//16       
             top_pad = (times+1)*16 -imgL.shape[2]
        else:
-            top_pad = 0
+            top_pad = 0 
        if imgL.shape[3] % 16 != 0:
             times = imgL.shape[3]//16                       
             left_pad = (times+1)*16-imgL.shape[3]
@@ -115,7 +117,6 @@ def main():
        imgL = np.lib.pad(imgL,((0,0),(0,0),(top_pad,0),(0,left_pad)),mode='constant',constant_values=0)
        imgR = np.lib.pad(imgR,((0,0),(0,0),(top_pad,0),(0,left_pad)),mode='constant',constant_values=0)
 
-       start_time = time.time()
        pred_disp = test(imgL,imgR)
        print('time = %.2f' %(time.time() - start_time))
        if top_pad !=0 or left_pad != 0:
@@ -123,7 +124,8 @@ def main():
        else:
             img = pred_disp
        img = (img*256).astype('uint16')
-       skimage.io.imsave('disparity.png',img)
+       cv2.imwrite('disparity.png',img)
+       #skimage.io.imsave('disparity.png',img)
        
        #img = np.concatenate((imgL_o, imgR_o),axis=1)
        #img = cv2.line(img, (0, 240), (1504, 240), (0, 0, 255), 2)
@@ -131,6 +133,8 @@ def main():
        #img = cv2.line(img, (0, 270), (1504, 270), (0, 0, 255), 2)
        #skimage.io.imsave('test.png',img)
 
+def main():
+    process_image(args.leftimg, args.rightimg, 'disparity.png')
 if __name__ == '__main__':
    main()
 
