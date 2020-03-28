@@ -34,7 +34,7 @@ parser.add_argument('--leftimg', default= None,
 parser.add_argument('--rightimg', default= None,
                     help='load model')   
 parser.add_argument('--isgray', default= False,
-                    help='load model')                                       
+                    help='load model')
 parser.add_argument('--model', default='stackhourglass',
                     help='select model')
 parser.add_argument('--maxdisp', type=int, default=192,
@@ -43,6 +43,11 @@ parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
+parser.add_argument('--indir', type=str, default="",
+                    help='Process all files in directory')
+parser.add_argument('--outdir', type=str, default="",
+                    help="Write output to this dir")
+
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -86,15 +91,16 @@ def test(imgL,imgR):
 
         return pred_disp
 
+def process_image(left_img: str, right_img: str, output_file: str):
+       start_time = time.time()
 
-def main():
        processed = preprocess.get_transform(augment=False)
        if args.isgray:
-           imgL_o = cv2.cvtColor(cv2.imread(args.leftimg,0), cv2.COLOR_GRAY2RGB)
-           imgR_o = cv2.cvtColor(cv2.imread(args.rightimg,0), cv2.COLOR_GRAY2RGB)
+           imgL_o = cv2.cvtColor(cv2.imread(left_img,0), cv2.COLOR_GRAY2RGB)
+           imgR_o = cv2.cvtColor(cv2.imread(right_img,0), cv2.COLOR_GRAY2RGB)
        else:
-           imgL_o = (skimage.io.imread(args.leftimg).astype('float32'))
-           imgR_o = (skimage.io.imread(args.rightimg).astype('float32'))
+           imgL_o = (skimage.io.imread(left_img))
+           imgR_o = (skimage.io.imread(right_img))
        
        imgL = processed(imgL_o).numpy()
        imgR = processed(imgR_o).numpy()
@@ -106,7 +112,7 @@ def main():
             times = imgL.shape[2]//16       
             top_pad = (times+1)*16 -imgL.shape[2]
        else:
-            top_pad = 0
+            top_pad = 0 
        if imgL.shape[3] % 16 != 0:
             times = imgL.shape[3]//16                       
             left_pad = (times+1)*16-imgL.shape[3]
@@ -115,22 +121,40 @@ def main():
        imgL = np.lib.pad(imgL,((0,0),(0,0),(top_pad,0),(0,left_pad)),mode='constant',constant_values=0)
        imgR = np.lib.pad(imgR,((0,0),(0,0),(top_pad,0),(0,left_pad)),mode='constant',constant_values=0)
 
-       start_time = time.time()
        pred_disp = test(imgL,imgR)
        print('time = %.2f' %(time.time() - start_time))
        if top_pad !=0 or left_pad != 0:
-            img = pred_disp[top_pad:,:-left_pad]
+            img = pred_disp[top_pad:,left_pad:]
        else:
             img = pred_disp
        img = (img*256).astype('uint16')
-       cv2.imwrite('disparity.png', img)
-       #skimage.io.imsave('disparity.png',img)
-       
-       #img = np.concatenate((imgL_o, imgR_o),axis=1)
-       #img = cv2.line(img, (0, 240), (1504, 240), (0, 0, 255), 2)
-       #img = cv2.line(img, (0, 210), (1504, 210), (0, 0, 255), 2)
-       #img = cv2.line(img, (0, 270), (1504, 270), (0, 0, 255), 2)
-       #skimage.io.imsave('test.png',img)
+       cv2.imwrite(output_file,img)
+
+def process_directory(dir_path: str, output_path: str):
+    files = os.listdir(dir_path)
+    files = [f for f in files if f.endswith('png') or f.endswith('jpg')]
+    left_files = [f for f in files if '-l' in f]
+    right_files = [f for f in files if '-r' in f]
+
+    for l, r in zip(left_files, right_files):
+        print(f"Processsing {l}, {r}")
+        frame_num = l.split('-')[0]
+
+        l_file = os.path.join(dir_path, l)
+        r_file = os.path.join(dir_path, r)
+
+        output_file = f'disparity-{frame_num}.png'
+        output_full_path = os.path.join(output_path, output_file)
+        print(f"Writing {output_full_path}")
+        process_image(l_file, r_file, output_full_path)
+
+
+def main():
+    if args.indir:
+        process_directory(args.indir, args.outdir)
+    
+    else:
+        process_image(args.leftimg, args.rightimg, 'disparity.png')
 
 if __name__ == '__main__':
    main()
