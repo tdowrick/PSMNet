@@ -34,7 +34,7 @@ parser.add_argument('--leftimg', default= None,
 parser.add_argument('--rightimg', default= None,
                     help='load model')   
 parser.add_argument('--isgray', default= False,
-                    help='load model')                                       
+                    help='load model')
 parser.add_argument('--model', default='stackhourglass',
                     help='select model')
 parser.add_argument('--maxdisp', type=int, default=192,
@@ -91,17 +91,16 @@ def test(imgL,imgR):
 
         return pred_disp
 
-
 def process_image(left_img: str, right_img: str, output_file: str):
        start_time = time.time()
 
        processed = preprocess.get_transform(augment=False)
        if args.isgray:
            imgL_o = cv2.cvtColor(cv2.imread(left_img,0), cv2.COLOR_GRAY2RGB)
-           imgR_o = cv2.cvtColor(cv2.imread(left_img,0), cv2.COLOR_GRAY2RGB)
+           imgR_o = cv2.cvtColor(cv2.imread(right_img,0), cv2.COLOR_GRAY2RGB)
        else:
            imgL_o = (skimage.io.imread(left_img))
-           imgR_o = (skimage.io.imread(left_img))
+           imgR_o = (skimage.io.imread(right_img))
        
        imgL = processed(imgL_o).numpy()
        imgR = processed(imgR_o).numpy()
@@ -125,7 +124,7 @@ def process_image(left_img: str, right_img: str, output_file: str):
        pred_disp = test(imgL,imgR)
        print('time = %.2f' %(time.time() - start_time))
        if top_pad !=0 or left_pad != 0:
-            img = pred_disp[top_pad:,:-left_pad]
+            img = pred_disp[top_pad:,left_pad:]
        else:
             img = pred_disp
        img = (img*256).astype('uint16')
