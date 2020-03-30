@@ -32,7 +32,9 @@ parser.add_argument('--loadmodel', default='./trained/pretrained_model_KITTI2015
 parser.add_argument('--leftimg', default= None,
                     help='load model')
 parser.add_argument('--rightimg', default= None,
-                    help='load model')   
+                    help='load model')
+parser.add_argument('--outfile', default=None,
+                    help='Location to save output disparity map')
 parser.add_argument('--isgray', default= False,
                     help='load model')
 parser.add_argument('--model', default='stackhourglass',
@@ -154,7 +156,7 @@ def main():
         process_directory(args.indir, args.outdir)
     
     else:
-        process_image(args.leftimg, args.rightimg, 'disparity.png')
+        process_image(args.leftimg, args.rightimg, args.outfile)
 
 if __name__ == '__main__':
    main()
