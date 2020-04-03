@@ -59,26 +59,31 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 #test_left_img, test_right_img = DA.dataloader(args.datapath)
 
-if args.model == 'stackhourglass':
-    model = stackhourglass(args.maxdisp)
-elif args.model == 'basic':
-    model = basic(args.maxdisp)
-else:
-    print('no model')
+def load_model(model='stackhourglass', loadmodel='./trained/pretrained_model_KITTI2015.tar', maxdisp=192):
 
-model = nn.DataParallel(model, device_ids=[0])
-model.cuda()
+    if model == 'stackhourglass':
+        model = stackhourglass(maxdisp)
+    elif model == 'basic':
+        model = basic(args.maxdisp)
+    else:
+        print('no model')
 
+    model = nn.DataParallel(model, device_ids=[0])
+    model.cuda()
 
-if args.loadmodel is not None:
-    print('load PSMNet')
-    state_dict = torch.load(args.loadmodel)
-    model.load_state_dict(state_dict['state_dict'])
+    if loadmodel is not None:
+        print('load PSMNet')
+        state_dict = torch.load(loadmodel)
+        model.load_state_dict(state_dict['state_dict'])
+
+    return model
+
+model = load_model(args.model, args.loadmodel, args.maxdisp)
+model.eval()
 
 print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
 
 def test(imgL,imgR):
-        model.eval()
 
         if args.cuda:
            imgL = torch.FloatTensor(imgL).cuda()
@@ -104,7 +109,7 @@ def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.nd
 
     return left_resized, right_resized
 
-def process_image(left_img: str, right_img: str, output_file: str):
+def process_image(left_img: str, right_img: str) -> np.ndarray:
        start_time = time.time()
 
        processed = preprocess.get_transform(augment=False)
@@ -149,7 +154,7 @@ def process_image(left_img: str, right_img: str, output_file: str):
        img = img * disparity_scale_factor
 
        img = (img*256).astype('uint16')
-       cv2.imwrite(output_file,img)
+       return img
 
 def process_directory(dir_path: str, output_path: str):
     files = os.listdir(dir_path)
@@ -167,7 +172,8 @@ def process_directory(dir_path: str, output_path: str):
         output_file = f'disparity-{frame_num}.png'
         output_full_path = os.path.join(output_path, output_file)
         print(f"Writing {output_full_path}")
-        process_image(l_file, r_file, output_full_path)
+        img = process_image(l_file, r_file)
+        cv2.imwrite(output_full_path,img)
 
 
 def main():
@@ -175,7 +181,9 @@ def main():
         process_directory(args.indir, args.outdir)
     
     else:
-        process_image(args.leftimg, args.rightimg, args.outfile)
+        img = process_image(args.leftimg, args.rightimg)
+        cv2.imwrite(args.outfile ,img)
+
 
 if __name__ == '__main__':
    main()
