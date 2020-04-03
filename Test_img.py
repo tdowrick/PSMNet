@@ -93,19 +93,29 @@ def test(imgL,imgR):
 
         return pred_disp
 
+def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> np.ndarray, np.ndarray:
+    """ Reduce image size to fit in CUDA memory. """
+
+    new_width = 640
+    new_height = 360
+    left_resized = skimage.transform.resize(imgL_o, (new_height, new_width))
+    right_resized = skimage.transform.resize(imgR_o, (new_height, new_width))
+
+    return left_resized, right_resized
+
 def process_image(left_img: str, right_img: str, output_file: str):
        start_time = time.time()
 
        processed = preprocess.get_transform(augment=False)
-       if args.isgray:
-           imgL_o = cv2.cvtColor(cv2.imread(left_img,0), cv2.COLOR_GRAY2RGB)
-           imgR_o = cv2.cvtColor(cv2.imread(right_img,0), cv2.COLOR_GRAY2RGB)
-       else:
-           imgL_o = (skimage.io.imread(left_img))
-           imgR_o = (skimage.io.imread(right_img))
+       imgL_o = (skimage.io.imread(left_img))
+       imgR_o = (skimage.io.imread(right_img))
        
-       imgL = processed(imgL_o).numpy()
-       imgR = processed(imgR_o).numpy()
+       original_height, original_width = imgL_o.shape[:2]
+       
+       imgL, imgR = scale_dowm_images(imgL_o, imgR_o)
+
+       imgL = processed(imgL).numpy()
+       imgR = processed(imgR).numpy()
        imgL = np.reshape(imgL,[1,3,imgL.shape[1],imgL.shape[2]])
        imgR = np.reshape(imgR,[1,3,imgR.shape[1],imgR.shape[2]])
 
@@ -129,6 +139,14 @@ def process_image(left_img: str, right_img: str, output_file: str):
             img = pred_disp[top_pad:,left_pad:]
        else:
             img = pred_disp
+
+       print(img.shape)
+
+       #Resize disparity to size of original image. Also need to scale 
+       disparity_scale_factor = original_width / img.shape[1]
+       img = skimage.transform.resize(img, (original_height, original_width))
+       img = img * disparity_scale_factor
+
        img = (img*256).astype('uint16')
        cv2.imwrite(output_file,img)
 
