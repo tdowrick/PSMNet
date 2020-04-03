@@ -2,6 +2,7 @@ from __future__ import print_function
 import argparse
 import os
 import random
+from typing import Tuple
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -93,7 +94,7 @@ def test(imgL,imgR):
 
         return pred_disp
 
-def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> np.ndarray, np.ndarray:
+def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """ Reduce image size to fit in CUDA memory. """
 
     new_width = 640
