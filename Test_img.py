@@ -51,13 +51,6 @@ parser.add_argument('--indir', type=str, default="",
 parser.add_argument('--outdir', type=str, default="",
                     help="Write output to this dir")
 
-args = parser.parse_args()
-args.cuda = not args.no_cuda and torch.cuda.is_available()
-
-torch.manual_seed(args.seed)
-if torch.cuda.is_available():
-    torch.cuda.manual_seed(args.seed)
-
 def load_model(model='stackhourglass', loadmodel='./trained/pretrained_model_KITTI2015.tar', maxdisp=192):
 
     if model == 'stackhourglass':
@@ -76,11 +69,6 @@ def load_model(model='stackhourglass', loadmodel='./trained/pretrained_model_KIT
         model.load_state_dict(state_dict['state_dict'])
 
     return model
-
-model = load_model(args.model, args.loadmodel, args.maxdisp)
-model.eval()
-
-print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
 
 def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """ Reduce image size to fit in CUDA memory. """
@@ -180,7 +168,20 @@ def main():
 
 
 if __name__ == '__main__':
-   main()
+
+    args = parser.parse_args()
+    args.cuda = not args.no_cuda and torch.cuda.is_available()
+
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(args.seed)
+
+    model = load_model(args.model, args.loadmodel, args.maxdisp)
+    model.eval()
+
+    print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
+
+    main()
 
 
 
