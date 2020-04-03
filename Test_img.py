@@ -99,8 +99,8 @@ def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.nd
 
     new_width = 640
     new_height = 360
-    left_resized = skimage.transform.resize(imgL_o, (new_height, new_width))
-    right_resized = skimage.transform.resize(imgR_o, (new_height, new_width))
+    left_resized = skimage.transform.resize(left_img, (new_height, new_width))
+    right_resized = skimage.transform.resize(right_img, (new_height, new_width))
 
     return left_resized, right_resized
 
