@@ -55,9 +55,8 @@ args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 torch.manual_seed(args.seed)
-if args.cuda:
+if torch.cuda.is_available():
     torch.cuda.manual_seed(args.seed)
-#test_left_img, test_right_img = DA.dataloader(args.datapath)
 
 def load_model(model='stackhourglass', loadmodel='./trained/pretrained_model_KITTI2015.tar', maxdisp=192):
 
@@ -82,22 +81,6 @@ model = load_model(args.model, args.loadmodel, args.maxdisp)
 model.eval()
 
 print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
-
-def test(imgL,imgR):
-
-        if args.cuda:
-           imgL = torch.FloatTensor(imgL).cuda()
-           imgR = torch.FloatTensor(imgR).cuda()     
-
-        imgL, imgR= Variable(imgL), Variable(imgR)
-
-        with torch.no_grad():
-            disp = model(imgL,imgR)
-
-        disp = torch.squeeze(disp)
-        pred_disp = disp.data.cpu().numpy()
-
-        return pred_disp
 
 def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """ Reduce image size to fit in CUDA memory. """
@@ -139,7 +122,18 @@ def process_image(left_img: str, right_img: str) -> np.ndarray:
        imgL = np.lib.pad(imgL,((0,0),(0,0),(top_pad,0),(0,left_pad)),mode='constant',constant_values=0)
        imgR = np.lib.pad(imgR,((0,0),(0,0),(top_pad,0),(0,left_pad)),mode='constant',constant_values=0)
 
-       pred_disp = test(imgL,imgR)
+       if torch.cuda.is_available():
+           imgL = torch.FloatTensor(imgL).cuda()
+           imgR = torch.FloatTensor(imgR).cuda()     
+
+       imgL, imgR= Variable(imgL), Variable(imgR)
+
+       with torch.no_grad():
+            disp = model(imgL,imgR)
+
+       disp = torch.squeeze(disp)
+       pred_disp = disp.data.cpu().numpy()
+
        print('time = %.2f' %(time.time() - start_time))
        if top_pad !=0 or left_pad != 0:
             img = pred_disp[top_pad:,left_pad:]
