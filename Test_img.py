@@ -80,7 +80,7 @@ def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.nd
 
     return left_resized, right_resized
 
-def process_image(left_img: str, right_img: str) -> np.ndarray:
+def process_image(left_img: str, right_img: str, model=model) -> np.ndarray:
        start_time = time.time()
 
        processed = preprocess.get_transform(augment=False)
