@@ -80,7 +80,7 @@ def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.nd
 
     return left_resized, right_resized
 
-def process_image(left_img: str, right_img: str, model=model) -> np.ndarray:
+def process_image(left_img: str, right_img: str, model) -> np.ndarray:
        start_time = time.time()
 
        processed = preprocess.get_transform(augment=False)
@@ -138,7 +138,7 @@ def process_image(left_img: str, right_img: str, model=model) -> np.ndarray:
        img = (img*256).astype('uint16')
        return img
 
-def process_directory(dir_path: str, output_path: str):
+def process_directory(dir_path: str, output_path: str, model):
     files = os.listdir(dir_path)
     files = [f for f in files if f.endswith('png') or f.endswith('jpg')]
     left_files = [f for f in files if '-l' in f]
@@ -154,16 +154,16 @@ def process_directory(dir_path: str, output_path: str):
         output_file = f'disparity-{frame_num}.png'
         output_full_path = os.path.join(output_path, output_file)
         print(f"Writing {output_full_path}")
-        img = process_image(l_file, r_file)
+        img = process_image(l_file, r_file, model)
         cv2.imwrite(output_full_path,img)
 
 
-def main():
+def main(model):
     if args.indir:
-        process_directory(args.indir, args.outdir)
+        process_directory(args.indir, args.outdir, model)
     
     else:
-        img = process_image(args.leftimg, args.rightimg)
+        img = process_image(args.leftimg, args.rightimg, model)
         cv2.imwrite(args.outfile ,img)
 
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
     print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
 
-    main()
+    main(model)
 
 
 
