@@ -80,12 +80,18 @@ def scale_dowm_images(left_img:np.ndarray, right_img: np.ndarray) -> Tuple[np.nd
 
     return left_resized, right_resized
 
+def process_image_from_file(left_img, right_img, model):
+       imgL_o = (skimage.io.imread(left_img))
+       imgR_o = (skimage.io.imread(right_img))
+
+       process_image(imgL_o, imgR_o, model)
+
 def process_image(left_img: str, right_img: str, model) -> np.ndarray:
        start_time = time.time()
 
        processed = preprocess.get_transform(augment=False)
-       imgL_o = (skimage.io.imread(left_img))
-       imgR_o = (skimage.io.imread(right_img))
+       imgL_o = left_img
+       imgR_o = right_img
        
        original_height, original_width = imgL_o.shape[:2]
        
@@ -154,7 +160,7 @@ def process_directory(dir_path: str, output_path: str, model):
         output_file = f'disparity-{frame_num}.png'
         output_full_path = os.path.join(output_path, output_file)
         print(f"Writing {output_full_path}")
-        img = process_image(l_file, r_file, model)
+        img = process_image_from_file(l_file, r_file, model)
         cv2.imwrite(output_full_path,img)
 
 
@@ -163,7 +169,7 @@ def main(model):
         process_directory(args.indir, args.outdir, model)
     
     else:
-        img = process_image(args.leftimg, args.rightimg, model)
+        img = process_image_from_file(args.leftimg, args.rightimg, model)
         cv2.imwrite(args.outfile ,img)
 
 
